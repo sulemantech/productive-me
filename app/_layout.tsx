@@ -1,79 +1,85 @@
-// app/TabsLayout.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import * as NavigationBar from 'expo-navigation-bar';
+import React, { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
+
+import CommunityScreen from './(tabs)/community';
 import DeepWorkSession from './(tabs)/deepwork';
+import HabitsScreen from './(tabs)/habits';
 import HomeTwoScreen from './(tabs)/hometwo';
-import UserProfile from './(tabs)/profiletwo';
 import ProgressScreen from './(tabs)/progress';
-import ReminderTwoScreen from './(tabs)/reminder-two';
+
+// const HabitsScreen = () => (
+//   <View style={styles.placeholderContainer}>
+//     <Text style={styles.placeholderText}>Habits Screen</Text>
+//   </View>
+// );
 
 const Tab = createBottomTabNavigator();
 
 export default function TabsLayout() {
+  useEffect(() => {
+    const hideNavigation = async () => {
+      await NavigationBar.setVisibilityAsync('hidden'); // Hide navigation bar
+      await NavigationBar.setBehaviorAsync('overlay-swipe'); // Allow swipe to reveal
+    };
+    hideNavigation();
+  }, []);
+
   return (
     <Tab.Navigator
+      // screenOptions={{
+      //   tabBarStyle: {
+      //     backgroundColor: '#374151',
+      //     borderTopWidth: 0,
+      //     paddingTop: 10,
+      //     paddingBottom: 12,
+      //     height: 80,
+      //   },
+      //   tabBarIconStyle: { marginBottom: -2 },
+      //   tabBarActiveTintColor: '#ffffff',
+      //   tabBarInactiveTintColor: '#9ca3af',
+      //   tabBarLabelStyle: { fontSize: 12, marginTop: 4, fontWeight: 'bold' },
+      //   headerShown: false,
+      // }}
       screenOptions={{
-        // Set the active and inactive icon colors
-        tabBarActiveTintColor: '#22D3EE',
-        tabBarInactiveTintColor: '#94A3B8',
-        // Style the tab bar container
-        tabBarStyle: {
-          backgroundColor: '#1E293B', // A dark slate color for the tab bar
-          borderTopWidth: 0,
-          elevation: 10,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 5,
-        },
-        // Style the header bar at the top of each screen
-        headerStyle: {
-          backgroundColor: '#0F172A', // A very dark slate for the header
-        },
-        headerTintColor: '#E2E8F0', // Light text color for the header title
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-      }}
+  tabBarStyle: {
+    backgroundColor: '#374151',
+    borderTopWidth: 0,
+    paddingTop: 10,
+    paddingBottom: 12,
+    height: 80,
+  },
+  tabBarIconStyle: { marginBottom: -2 },
+  tabBarActiveTintColor: '#ffffff',
+  tabBarInactiveTintColor: '#9ca3af',
+  tabBarLabelStyle: {
+    fontSize: 10, // 👈 smaller text size
+    marginTop: 4,
+    fontWeight: 'bold',
+  },
+  headerShown: false,
+}}
+
     >
-      {/* <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" color={color} size={size} />
-          ),
-        }}
-      /> */}
       <Tab.Screen
         name="Home"
         component={HomeTwoScreen}
         options={{
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" color={color} size={size} />
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="home-outline" color={color} size={28} />
           ),
         }}
       />
-      {/* <Tab.Screen
-        name="Reminders"
-        component={RemindersScreen}
-        options={{
-          headerShown: true,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="notifications" color={color} size={size} />
-          ),
-        }}
-      /> */}
-
       <Tab.Screen
-        name="Reminders"
-        component={ReminderTwoScreen}
+        name="Habits"
+        component={HabitsScreen}
         options={{
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="notifications" color={color} size={size} />
+          tabBarLabel: 'Habits',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="list-outline" color={color} size={28} />
           ),
         }}
       />
@@ -81,51 +87,46 @@ export default function TabsLayout() {
         name="Progress"
         component={ProgressScreen}
         options={{
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar" color={color} size={size} />
+          tabBarLabel: 'Progress',
+          tabBarIcon: ({ color }) => (
+           <Ionicons name="stats-chart-outline" color={color} size={28} />
           ),
         }}
       />
       <Tab.Screen
-        name="Deep Work"
+        name="Focus"
         component={DeepWorkSession}
         options={{
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="trophy" color={color} size={size} />
+          tabBarLabel: 'Focus',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="timer-outline" color={color} size={28} />
           ),
         }}
       />
       <Tab.Screen
-        name="Profile"
-        component={UserProfile}
+        name="Community"
+        component={CommunityScreen}
         options={{
-          headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" color={color} size={size} />
+          tabBarLabel: 'Community',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="people-outline" color={color} size={28} />
           ),
         }}
       />
-      {/* <Tab.Screen
-        name="Add Task"
-        component={AddTaskScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add" color={color} size={size} />
-          ),
-        }}
-      /> */}
-      
-      {/* <Tab.Screen
-        name="Streak"
-        component={StreakScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="trophy" color={color} size={size} />
-          ),
-        }}
-      /> */}
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  placeholderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#111827',
+  },
+  placeholderText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#E5E7EB',
+  },
+});

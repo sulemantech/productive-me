@@ -1,19 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 // Main screen component for the Deep Work Session
-const DeepWorkSession = () => {
+const DeepWorkSession = ({ onBack }) => {
   // Timer state management
   const [initialSeconds, setInitialSeconds] = useState(25 * 60);
   const [secondsRemaining, setSecondsRemaining] = useState(25 * 60);
@@ -89,13 +89,25 @@ const DeepWorkSession = () => {
   const progress = 1 - (secondsRemaining / initialSeconds);
   const strokeDashoffset = circumference * progress;
 
+  // Function to simulate a back action
+  const handleBack = () => {
+    console.log('Back button pressed. This would typically close the current screen.');
+    // In a real app with react-navigation, you would call navigation.goBack() here.
+  };
+
   return (
     <ScrollView
       style={styles.scrollView}
       contentContainerStyle={styles.contentContainer}
     >
       <View style={styles.card}>
-        <Text style={styles.title}>Deep Work Session</Text>
+        {/* Header with back button and title */}
+        <View style={styles.headerContainer}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <Text style={styles.backButtonText}>{'<'}</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>Deep Work Session</Text>
+        </View>
 
         {/* Timer Display Section */}
         <View style={styles.timerContainer}>
@@ -261,11 +273,31 @@ const styles = StyleSheet.create({
     maxWidth: 384, // Corresponds to max-w-sm
     alignItems: 'center',
   },
+  // New style for the header container to align title and back button
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    width: '100%',
+    marginBottom: 24,
+  },
+  // New style for the back button
+  backButton: {
+    position: 'absolute',
+    left: 0,
+    paddingRight: 10, // Add some padding to not overlap with the title
+    zIndex: 1, // Ensure the button is clickable
+  },
+  backButtonText: {
+    fontSize: 24,
+    color: '#CBD5E1', // Corresponds to text-slate-300
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#F8FAFC', // Corresponds to text-white
-    marginBottom: 24,
+    textAlign: 'center', // Center the title within the container
+    flex: 1, // Allow the title to take up remaining space
   },
   timerContainer: {
     position: 'relative',

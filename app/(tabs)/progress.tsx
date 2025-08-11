@@ -76,7 +76,6 @@ const generateMonthlyData = () => {
 const ProgressScreen = () => {
   const [activeMetric, setActiveMetric] = useState('prayers');
   const [monthlyData, setMonthlyData] = useState([]);
-  // New state for the modal visibility and content
   const [isModalVisible, setModalVisible] = useState(false);
   const [modalContent, setModalContent] = useState({});
 
@@ -114,7 +113,12 @@ const ProgressScreen = () => {
     }
   };
 
+  // UPDATED: Added a check for dayData to prevent the crash
   const getColorForDay = (metric, dayData) => {
+    if (!dayData) {
+      return styles.bgSlate700; // Return a default color for missing data
+    }
+
     let completion = 0;
     if (metric === 'prayers') {
       completion = dayData.prayers / 5;
@@ -134,21 +138,23 @@ const ProgressScreen = () => {
     return styles.bgSlate700;
   };
 
-  // Function to handle day tap and show the modal
+  // UPDATED: Added a check for dayData to prevent the crash
   const handleDayPress = (dayData) => {
+    if (!dayData) return; // Do nothing if there is no data for the day
+
     const metric = activeMetric;
     const metricDetails = getMetricDetails(metric);
     const value = dayData[metric];
 
     let message;
     if (metric === 'prayers') {
-        message = `You completed ${value} out of 5 prayers.`;
+      message = `You completed ${value} out of 5 prayers.`;
     } else if (metric === 'dhikr') {
-        message = `Your Dhikr goal was ${value === 1 ? 'completed' : 'not completed'}.`;
+      message = `Your Dhikr goal was ${value === 1 ? 'completed' : 'not completed'}.`;
     } else if (metric === 'todos') {
-        message = `You completed ${value} todos.`;
+      message = `You completed ${value} todos.`;
     } else if (metric === 'focus') {
-        message = `You completed ${value} focus sessions.`;
+      message = `You completed ${value} focus sessions.`;
     }
 
     setModalContent({
@@ -165,134 +171,145 @@ const ProgressScreen = () => {
   const today = new Date();
   const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
 
-  // Create an array of day cells, including spacers for the start of the month
-  const calendarCells = [];
-  for (let i = 0; i < firstDayOfMonth; i++) {
-    calendarCells.push(<View key={`spacer-${i}`} style={styles.dayCellSpacer} />);
-  }
-  monthlyData.forEach((dayData, index) => {
-    calendarCells.push(
-      <TouchableOpacity
-        key={index}
-        style={[styles.dayCell, getColorForDay(activeMetric, dayData)]}
-        onPress={() => handleDayPress(dayData)} // Tapping a day triggers the modal
-      >
-        <Text style={styles.dayText}>{dayData.day}</Text>
-      </TouchableOpacity>
-    );
-  });
+  // Calendar days array
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
-          <Icons.ChevronLeft color="#22d3ee" width={24} height={24} />
-        </TouchableOpacity>
-        {/* The header title is now centered using absolute positioning */}
-        <Text style={styles.headerTitle}>Your Progress</Text>
+    <View style={styles.fullScreenContainer}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton}>
+            <Icons.ChevronLeft color="#22d3ee" width={24} height={24} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Your Progress</Text>
+        </View>
+
+        {/* Scrollable Content Area */}
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Key Streaks & Progress */}
+          <View style={styles.statsGrid}>
+            <View style={styles.statsCard}>
+              <View style={styles.statsIconContainer}>
+                <Icons.Flame color="#fff" width={24} height={24} />
+              </View>
+              <Text style={styles.statsTextMain}>12 Days</Text>
+              <Text style={styles.statsTextSub}>Prayer Streak</Text>
+            </View>
+            <View style={styles.statsCard}>
+              <View style={styles.statsIconContainer}>
+                <Icons.BarChart2 color="#fff" width={24} height={24} />
+              </View>
+              <Text style={styles.statsTextMain}>84%</Text>
+              <Text style={styles.statsTextSub}>Overall Progress</Text>
+            </View>
+          </View>
+
+          {/* Metric Selector for Heatmap */}
+          <View style={styles.metricSelector}>
+            <TouchableOpacity
+              style={[styles.metricButton, activeMetric === 'prayers' && styles.metricButtonActive]}
+              onPress={() => setActiveMetric('prayers')}
+            >
+              <Text style={[styles.metricButtonText, activeMetric === 'prayers' && styles.metricButtonTextActive]}>Prayers</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.metricButton, activeMetric === 'dhikr' && styles.metricButtonActive]}
+              onPress={() => setActiveMetric('dhikr')}
+            >
+              <Text style={[styles.metricButtonText, activeMetric === 'dhikr' && styles.metricButtonTextActive]}>Dhikr</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.metricButton, activeMetric === 'todos' && styles.metricButtonActive]}
+              onPress={() => setActiveMetric('todos')}
+            >
+              <Text style={[styles.metricButtonText, activeMetric === 'todos' && styles.metricButtonTextActive]}>Todos</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.metricButton, activeMetric === 'focus' && styles.metricButtonActive]}
+              onPress={() => setActiveMetric('focus')}
+            >
+              <Text style={[styles.metricButtonText, activeMetric === 'focus' && styles.metricButtonTextActive]}>Focus</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Heatmap Calendar */}
+          <View style={styles.heatmapCard}>
+            <View style={styles.heatmapTitleContainer}>
+              {metricDetails.icon}
+              <Text style={styles.heatmapTitleText}>{metricDetails.title}</Text>
+            </View>
+
+            {/* Day Headers and Calendar Grid in a single, properly aligned structure */}
+            <View style={styles.calendarContainer}>
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                <View key={`day-header-${index}`} style={styles.dayCellContainer}>
+                  <Text style={styles.dayHeaderText}>{day}</Text>
+                </View>
+              ))}
+              {/* Spacer cells for the first days of the week */}
+              {[...Array(firstDayOfMonth)].map((_, index) => (
+                <View key={`spacer-${index}`} style={styles.dayCellContainer} />
+              ))}
+              {/* Calendar Day cells */}
+              {daysArray.map((day) => {
+                const dayData = monthlyData.find(d => d.day === day);
+                return (
+                  <TouchableOpacity
+                    key={day}
+                    style={[styles.dayCellContainer]}
+                    onPress={() => handleDayPress(dayData)}
+                  >
+                    <View style={[styles.dayCell, getColorForDay(activeMetric, dayData)]}>
+                      <Text style={styles.dayText}>{day}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            
+            <View style={styles.legendContainer}>
+              <Text style={styles.legendText}>Completion Legend</Text>
+              <View style={styles.legendItems}>
+                <Text style={styles.legendTextLow}>Low</Text>
+                <View style={[styles.legendBox, styles.bgSlate700]} />
+                <View style={[styles.legendBox, styles.bgEmerald100]} />
+                <View style={[styles.legendBox, styles.bgEmerald200]} />
+                <View style={[styles.legendBox, styles.bgEmerald300]} />
+                <View style={[styles.legendBox, styles.bgEmerald400]} />
+                <View style={[styles.legendBox, styles.bgEmerald500]} />
+                <Text style={styles.legendTextHigh}>High</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Performance Insights */}
+          <View style={styles.insightsCard}>
+            <Text style={styles.insightsTitle}>Performance Insights</Text>
+            <View style={styles.insightsItem}>
+              <Icons.CheckCircle2 style={styles.insightsIconGreen} width={20} height={20} />
+              <Text style={styles.insightsText}>You have a perfect prayer attendance streak of 12 days.</Text>
+            </View>
+            <View style={styles.insightsItem}>
+              <Icons.BookText style={styles.insightsIconCyan} width={20} height={20} />
+              <Text style={styles.insightsText}>Your average Dhikr goal completion is 85% this month.</Text>
+            </View>
+            <View style={styles.insightsItem}>
+              <Icons.ListTodo style={styles.insightsIconBlue} width={20} height={20} />
+              <Text style={styles.insightsText}>You completed an average of 4.2 todos per day this month.</Text>
+            </View>
+            <View style={styles.insightsItem}>
+              <Icons.Target style={styles.insightsIconYellow} width={20} height={20} />
+              <Text style={styles.insightsText}>You completed 14 focus sessions this month.</Text>
+            </View>
+          </View>
+        </ScrollView>
       </View>
-
-      {/* Scrollable Content Area */}
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Key Streaks & Progress */}
-        <View style={styles.statsGrid}>
-          <View style={styles.statsCard}>
-            <View style={styles.statsIconContainer}>
-              <Icons.Flame color="#fff" width={24} height={24} />
-            </View>
-            <Text style={styles.statsTextMain}>12 Days</Text>
-            <Text style={styles.statsTextSub}>Prayer Streak</Text>
-          </View>
-          <View style={styles.statsCard}>
-            <View style={styles.statsIconContainer}>
-              <Icons.BarChart2 color="#fff" width={24} height={24} />
-            </View>
-            <Text style={styles.statsTextMain}>84%</Text>
-            <Text style={styles.statsTextSub}>Overall Progress</Text>
-          </View>
-        </View>
-
-        {/* Metric Selector for Heatmap */}
-        <View style={styles.metricSelector}>
-          <TouchableOpacity
-            style={[styles.metricButton, activeMetric === 'prayers' && styles.metricButtonActive]}
-            onPress={() => setActiveMetric('prayers')}
-          >
-            <Text style={[styles.metricButtonText, activeMetric === 'prayers' && styles.metricButtonTextActive]}>Prayers</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.metricButton, activeMetric === 'dhikr' && styles.metricButtonActive]}
-            onPress={() => setActiveMetric('dhikr')}
-          >
-            <Text style={[styles.metricButtonText, activeMetric === 'dhikr' && styles.metricButtonTextActive]}>Dhikr</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.metricButton, activeMetric === 'todos' && styles.metricButtonActive]}
-            onPress={() => setActiveMetric('todos')}
-          >
-            <Text style={[styles.metricButtonText, activeMetric === 'todos' && styles.metricButtonTextActive]}>Todos</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.metricButton, activeMetric === 'focus' && styles.metricButtonActive]}
-            onPress={() => setActiveMetric('focus')}
-          >
-            <Text style={[styles.metricButtonText, activeMetric === 'focus' && styles.metricButtonTextActive]}>Focus</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Heatmap Calendar */}
-        <View style={styles.heatmapCard}>
-          <View style={styles.heatmapTitleContainer}>
-            {metricDetails.icon}
-            <Text style={styles.heatmapTitleText}>{metricDetails.title}</Text>
-          </View>
-          <View style={styles.calendarGrid}>
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
-              <Text key={`day-header-${index}`} style={styles.dayHeader}>{day}</Text>
-            ))}
-            {calendarCells}
-          </View>
-          <View style={styles.legendContainer}>
-            <Text style={styles.legendText}>Completion Legend</Text>
-            <View style={styles.legendItems}>
-              <Text style={styles.legendTextLow}>Low</Text>
-              <View style={[styles.legendBox, styles.bgSlate700]} />
-              <View style={[styles.legendBox, styles.bgEmerald100]} />
-              <View style={[styles.legendBox, styles.bgEmerald200]} />
-              <View style={[styles.legendBox, styles.bgEmerald300]} />
-              <View style={[styles.legendBox, styles.bgEmerald400]} />
-              <View style={[styles.legendBox, styles.bgEmerald500]} />
-              <Text style={styles.legendTextHigh}>High</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Performance Insights */}
-        <View style={styles.insightsCard}>
-          <Text style={styles.insightsTitle}>Performance Insights</Text>
-          <View style={styles.insightsItem}>
-            <Icons.CheckCircle2 style={styles.insightsIconGreen} width={20} height={20} />
-            <Text style={styles.insightsText}>You have a perfect prayer attendance streak of 12 days.</Text>
-          </View>
-          <View style={styles.insightsItem}>
-            <Icons.BookText style={styles.insightsIconCyan} width={20} height={20} />
-            <Text style={styles.insightsText}>Your average Dhikr goal completion is 85% this month.</Text>
-          </View>
-          <View style={styles.insightsItem}>
-            <Icons.ListTodo style={styles.insightsIconBlue} width={20} height={20} />
-            <Text style={styles.insightsText}>You completed an average of 4.2 todos per day this month.</Text>
-          </View>
-          <View style={styles.insightsItem}>
-            <Icons.Target style={styles.insightsIconYellow} width={20} height={20} />
-            <Text style={styles.insightsText}>You completed 14 focus sessions this month.</Text>
-          </View>
-        </View>
-      </ScrollView>
 
       {/* Tooltip Modal */}
       <Modal
@@ -320,6 +337,10 @@ const ProgressScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: '#0f172a', // Ensure this fills the entire screen
+  },
   container: {
     flex: 1,
     backgroundColor: '#0f172a', // slate-900
@@ -331,18 +352,16 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     elevation: 20,
     overflow: 'hidden',
-    paddingHorizontal: 16, // Added horizontal padding for "margin"
-    paddingTop: 16, // Added top padding
-    paddingBottom: 20, // Added bottom padding
+    marginHorizontal: 16,
+    marginVertical: 16,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 30,
-    marginTop: 30,
+    paddingTop: 16,
     paddingBottom: 16,
-    backgroundColor: '#0f172a',
-    position: 'relative', // Added position relative for absolute title
+    paddingHorizontal: 16,
+    position: 'relative',
   },
   backButton: {
     marginRight: 16,
@@ -351,7 +370,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    position: 'absolute', // Centering with absolute position
+    position: 'absolute',
     left: 0,
     right: 0,
     textAlign: 'center',
@@ -360,7 +379,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: 20, // Add bottom padding for the last element
+    paddingHorizontal: 16, // Padding moved to the content container
+    paddingBottom: 20,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -442,30 +462,31 @@ const styles = StyleSheet.create({
     color: '#fff',
     marginLeft: 8,
   },
-  calendarGrid: {
+  calendarContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginBottom: 0,
     justifyContent: 'space-between',
-    marginBottom: 16,
   },
-  dayHeader: {
-    width: `${100 / 7}%`,
+  dayCellContainer: {
+    // This container now handles the spacing and sizing
+    width: `${100 / 7}%`, // Distributes space evenly for 7 columns
+    aspectRatio: 1, // Ensures the container is a square
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 2, // Adds a small bit of spacing around the day cell itself
+  },
+  dayHeaderText: {
     textAlign: 'center',
     color: '#94a3b8', // slate-400
     fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  dayCellSpacer: {
-    width: `${100 / 7}%`,
-    aspectRatio: 1,
   },
   dayCell: {
-    width: `${100 / 7}%`,
-    aspectRatio: 1,
+    flex: 1, // Let the day cell fill its container
+    width: '100%',
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 2,
   },
   dayText: {
     fontSize: 12,
@@ -474,6 +495,7 @@ const styles = StyleSheet.create({
   },
   legendContainer: {
     alignItems: 'center',
+    marginTop: 8,
   },
   legendText: {
     fontSize: 12,
