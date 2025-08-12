@@ -5,9 +5,9 @@ import React, { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 
 import CommunityScreen from './(tabs)/community';
-import DeepWorkSession from './(tabs)/deepwork';
 import HabitsScreen from './(tabs)/habits';
-import HomeTwoScreen from './(tabs)/hometwo';
+import HomeScreen from './(tabs)/home';
+import DeepWorkScreen from './(tabs)/meditation';
 import ProgressScreen from './(tabs)/progress';
 
 // const HabitsScreen = () => (
@@ -65,7 +65,7 @@ export default function TabsLayout() {
     >
       <Tab.Screen
         name="Home"
-        component={HomeTwoScreen}
+        component={HomeScreen}
         options={{
           tabBarLabel: 'Home',
           tabBarIcon: ({ color }) => (
@@ -95,7 +95,7 @@ export default function TabsLayout() {
       />
       <Tab.Screen
         name="Focus"
-        component={DeepWorkSession}
+        component={DeepWorkScreen}
         options={{
           tabBarLabel: 'Focus',
           tabBarIcon: ({ color }) => (

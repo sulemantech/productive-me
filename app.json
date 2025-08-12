@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Ehsaan",
-    "slug": "Ehsaan",
+    "name": "Tazkia 360",
+    "slug": "Tazkia 360",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/ehsan-logo.png",
-    "scheme": "ehsaan",
+    "scheme": "Tazkia 360",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

@@ -1,23 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import SplashScreen from '../splash'; // 👈 Import your splash
 
-export default function HomeOldScreen() {
-  const [isSplashVisible, setIsSplashVisible] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsSplashVisible(false);
-    }, 2000); // 👈 Show splash for 2 seconds (adjust as needed)
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (isSplashVisible) {
-    return <SplashScreen />;
-  }
-
+export default function HomePrevScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -98,6 +83,20 @@ export default function HomeOldScreen() {
       <TouchableOpacity style={styles.fab}>
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
+
+      {/* Bottom Navigation */}
+      {/* <View style={styles.navbar}>
+        {['🏠 Home', '⏰ Reminder', '📅 Calendar', '👤 Profile'].map((item, index) => {
+          const [icon, label] = item.split(' ');
+          const isActive = index === 0;
+          return (
+            <View key={index} style={styles.navItem}>
+              <Text style={[styles.navIcon, isActive && styles.navActive]}>{icon}</Text>
+              <Text style={[styles.navLabel, isActive && styles.navActive]}>{label}</Text>
+            </View>
+          );
+        })}
+      </View> */}
     </SafeAreaView>
   );
 }
