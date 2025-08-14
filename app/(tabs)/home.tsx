@@ -4,9 +4,118 @@ import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import DhikrScreen from "./dhikr";
 import { default as MeditationScreen } from "./meditation";
-import QuranCorner from "./qurancorner";
+import QuranGoalCard from "./qurangoalcard";
 import QuranReaderScreen from "./quranreader";
 
+// A new component to handle the Dhikr options
+const DhikrCard = ({ onNavigateToDhikr }) => {
+  return (
+    <View style={dhikrCardStyles.card}>
+      <Text style={dhikrCardStyles.cardTitle}>Dhikr & Dua</Text>
+      <Text style={dhikrCardStyles.cardText}>Engage in the remembrance of Allah and seek protection.</Text>
+      <View style={dhikrCardStyles.buttonContainer}>
+        {/* Button for Morning Adhkar */}
+        <TouchableOpacity
+          style={dhikrCardStyles.dhikrButton}
+          onPress={() => onNavigateToDhikr('Morning')}
+        >
+          <Text style={dhikrCardStyles.dhikrButtonText}>🌅 Morning Adhkar</Text>
+        </TouchableOpacity>
+        {/* Button for Evening Adhkar */}
+        <TouchableOpacity
+          style={dhikrCardStyles.dhikrButton}
+          onPress={() => onNavigateToDhikr('Evening')}
+        >
+          <Text style={dhikrCardStyles.dhikrButtonText}>🌆 Evening Adhkar</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={dhikrCardStyles.fullWidthButtonContainer}>
+        {/* Button for Protection Duas */}
+        <TouchableOpacity
+          style={dhikrCardStyles.fullWidthButton}
+          onPress={() => onNavigateToDhikr('Protection')}
+        >
+          <Text style={dhikrCardStyles.fullWidthButtonText}>🛡️ Protection Duas</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+// Styles for the new DhikrCard
+const dhikrCardStyles = StyleSheet.create({
+  card: {
+    backgroundColor: 'rgba(51, 65, 85, 0.5)',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.5)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: 'white',
+  },
+  cardText: {
+    color: '#cbd5e1',
+    marginBottom: 16,
+  },
+  // Corrected the button container to use explicit margins instead of `gap` for better compatibility
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  // Corrected the dhikr button styling for better visibility
+  dhikrButton: {
+    flex: 1,
+    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.5)',
+    marginHorizontal: 5, // Added margin to create spacing
+  },
+  dhikrButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  fullWidthButtonContainer: {
+    marginTop: 10,
+    // Using padding on the container to prevent the button from touching the card edges
+    paddingHorizontal: 5,
+  },
+  fullWidthButton: {
+    width: '100%',
+    backgroundColor: 'rgba(78, 59, 137, 0.5)',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.5)',
+  },
+  fullWidthButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});
 
 /**
  * The main HomeScreen component which handles the navigation state.
@@ -25,24 +134,37 @@ export default function HomeScreen() {
   const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   const [showDhikrScreen, setShowDhikrScreen] = useState(false);
+  const [selectedDhikrType, setSelectedDhikrType] = useState(null); // New state to track which Dhikr to show
   const [showDeepWorkScreen, setShowDeepWorkScreen] = useState(false);
   // NEW: State for the Quran Reader screen
   const [showQuranReaderScreen, setShowQuranReaderScreen] = useState(false);
   const [showMeditationScreen, setShowMeditationScreen] = useState(false);
+  const [isReading, setIsReading] = useState(false);
 
+
+  // Inside HomeScreen.js
+const [lastReadSurah, setLastReadSurah] = useState('N/A');
+const [lastReadAyahCount, setLastReadAyahCount] = useState(0);
+
+const handleFinishReading = (surahName, ayahCount) => {
+    // This is the function that receives the progress from the child component.
+    setShowQuranReaderScreen(false)
+    setLastReadSurah(surahName);
+    setLastReadAyahCount(ayahCount);
+    setIsReading(false);
+};
 
   // Helper function to get an icon based on prayer name
-  const getPrayerIcon = (prayerName) => {
-    switch (prayerName) {
-      case 'Fajr': return '🌅';
-      case 'Dhuhr': return '☀️';
-      case 'Asr': return '🌞';
-      case 'Maghrib': return '🌇';
-      case 'Isha': return '🌃';
-      default: return '🕌';
-    }
-  };
-
+const getPrayerIcon = (prayerName) => {
+        switch (prayerName) {
+            case 'Fajr': return <Ionicons name="sunny-outline" size={24} color="#06b6d4" />;
+            case 'Dhuhr': return <Ionicons name="sunny" size={24} color="#fcd34d" />;
+            case 'Asr': return <Ionicons name="partly-sunny" size={24} color="#f97316" />;
+            case 'Maghrib': return <Ionicons name="moon-outline" size={24} color="#f97316" />;
+            case 'Isha': return <Ionicons name="moon" size={24} color="#fcd34d" />;
+            default: return <Ionicons name="time-outline" size={24} color="#06b6d4" />;
+        }
+    };
   useEffect(() => {
     // Helper to get Gregorian date
     const getGregorianDate = () => {
@@ -142,12 +264,18 @@ export default function HomeScreen() {
     setCompletedPrayers(newCompletedPrayers);
   };
 
+  const handleDhikrPress = (type) => {
+    setSelectedDhikrType(type); // Set the type of dhikr to show
+    setShowDhikrScreen(true);
+  };
+
   const completedCount = completedPrayers.filter(Boolean).length;
   const totalPrayers = prayerSchedule.length;
   const progressPercentage = totalPrayers > 0 ? (completedCount / totalPrayers) * 100 : 0;
 
   if (showDhikrScreen) {
-    return <DhikrScreen onBack={() => setShowDhikrScreen(false)} />;
+    // You'll need to update DhikrScreen to accept and use this prop
+    return <DhikrScreen onBack={() => setShowDhikrScreen(false)} dhikrType={selectedDhikrType} />;
   }
   // UPDATED: Now we show the MeditationScreen
   if (showMeditationScreen) {
@@ -155,7 +283,11 @@ export default function HomeScreen() {
   }
   // NEW: Check for the Quran Reader screen
   if (showQuranReaderScreen) {
-    return <QuranReaderScreen onBack={() => setShowQuranReaderScreen(false)} />;
+    // return <QuranReaderScreen onBack={() => setShowQuranReaderScreen(false)} />;
+    return <QuranReaderScreen
+    onBack={() => setIsReading(false)}
+    onFinishReading={handleFinishReading} // <-- This is the key
+/>
   }
   // This is no longer used, but kept for clarity and to show the change
   if (showDeepWorkScreen) {
@@ -244,7 +376,7 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView style={styles.contentArea}>
-        
+
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Hadith of the Day</Text>
           <Text style={styles.cardTextItalic}>
@@ -283,6 +415,10 @@ export default function HomeScreen() {
             </>
           )}
         </View>
+          {/* NEW: The QuranGoalCard component is added here */}
+        <QuranGoalCard  onNavigateToReader={() => setShowQuranReaderScreen(true)}/>
+          <DhikrCard onNavigateToDhikr={handleDhikrPress} />
+        
         {/* Tab section */}
         <View style={styles.tabBar}>
           <TouchableOpacity
@@ -307,6 +443,11 @@ export default function HomeScreen() {
 
         {/* Render the content for the active tab */}
         {renderTabContent()}
+
+          {/* NEW: The updated QuranCorner component with navigation */}
+        {/* <QuranCorner onNavigateToReader={() => setShowQuranReaderScreen(true)} /> */}
+
+        {/* NEW: The updated DhikrCard component */}
         
         {/* UPDATED: Meditation & Reflection card */}
         <View style={[styles.card, styles.meditationCard]}>
@@ -337,19 +478,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* NEW: The updated QuranCorner component with navigation */}
-        <QuranCorner onNavigateToReader={() => setShowQuranReaderScreen(true)} />
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Dhikr & Dua</Text>
-          <Text style={styles.cardText}>Engage in the remembrance of Allah with our interactive counter.</Text>
-          <TouchableOpacity
-            onPress={() => setShowDhikrScreen(true)}
-            style={styles.fullWidthButtonMarginTop}
-          >
-            <Text style={styles.fullWidthButtonText}>Go to Dhikr Counter</Text>
-          </TouchableOpacity>
-        </View>
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Spiritual Goals</Text>
           <View style={styles.goalItem}>
@@ -533,10 +661,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   prayerButtonCompleted: {
-    backgroundColor: '#16a34a', // green-700
+    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+    borderWidth: 1, // Added border width
+    borderColor: '#06b6d4', // Border color for completed prayers
   },
   prayerButtonPending: {
-    backgroundColor: '#475569', // slate-600
+    backgroundColor: 'rgba(6, 182, 212, 0.05)',
+    borderWidth: 1, // Added border width
+    borderColor: 'rgba(6, 182, 212, 0.3)', // Subtle border for pending prayers
   },
   prayerIcon: {
     fontSize: 24,
