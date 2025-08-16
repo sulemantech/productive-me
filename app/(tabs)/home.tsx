@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient"; // NEW: Import LinearGradient
 import * as Location from 'expo-location';
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -16,26 +17,59 @@ const DhikrCard = ({ onNavigateToDhikr }) => {
       <View style={dhikrCardStyles.buttonContainer}>
         {/* Button for Morning Adhkar */}
         <TouchableOpacity
-          style={dhikrCardStyles.dhikrButton}
           onPress={() => onNavigateToDhikr('Morning')}
+          style={dhikrCardStyles.dhikrButton}
         >
-          <Text style={dhikrCardStyles.dhikrButtonText}>🌅 Morning Adhkar</Text>
+          {/* UPDATED: Use LinearGradient for a subtle color effect */}
+          <LinearGradient
+            colors={['#075985', '#0891b2']} // Darker to lighter blue gradient
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={dhikrCardStyles.gradientButton}
+          >
+            <View style={dhikrCardStyles.buttonContent}>
+              <Ionicons name="sunny-outline" size={24} color="white" style={dhikrCardStyles.buttonIcon} />
+              <Text style={dhikrCardStyles.dhikrButtonText}>Morning Adhkar</Text>
+            </View>
+          </LinearGradient>
         </TouchableOpacity>
         {/* Button for Evening Adhkar */}
         <TouchableOpacity
-          style={dhikrCardStyles.dhikrButton}
           onPress={() => onNavigateToDhikr('Evening')}
+          style={dhikrCardStyles.dhikrButton}
         >
-          <Text style={dhikrCardStyles.dhikrButtonText}>🌆 Evening Adhkar</Text>
+          {/* UPDATED: Use LinearGradient for a subtle orange gradient */}
+          <LinearGradient
+            colors={['#9a3412', '#ea580c']} // Darker to lighter orange gradient
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={dhikrCardStyles.gradientButton}
+          >
+            <View style={dhikrCardStyles.buttonContent}>
+              <Ionicons name="moon-outline" size={24} color="white" style={dhikrCardStyles.buttonIcon} />
+              <Text style={dhikrCardStyles.dhikrButtonText}>Evening Adhkar</Text>
+            </View>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
       <View style={dhikrCardStyles.fullWidthButtonContainer}>
         {/* Button for Protection Duas */}
         <TouchableOpacity
-          style={dhikrCardStyles.fullWidthButton}
           onPress={() => onNavigateToDhikr('Protection')}
+          style={dhikrCardStyles.fullWidthButton}
         >
-          <Text style={dhikrCardStyles.fullWidthButtonText}>🛡️ Protection Duas</Text>
+          {/* UPDATED: Use a distinct purple gradient */}
+          <LinearGradient
+            colors={['#581c87', '#8b5cf6']} // Darker to lighter purple gradient
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={dhikrCardStyles.gradientFullWidthButton}
+          >
+            <View style={dhikrCardStyles.buttonContent}>
+              <Ionicons name="shield-checkmark-outline" size={24} color="white" style={dhikrCardStyles.buttonIcon} />
+              <Text style={dhikrCardStyles.fullWidthButtonText}>Protection Duas</Text>
+            </View>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </View>
@@ -67,23 +101,36 @@ const dhikrCardStyles = StyleSheet.create({
     color: '#cbd5e1',
     marginBottom: 16,
   },
-  // Corrected the button container to use explicit margins instead of `gap` for better compatibility
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 10,
   },
-  // Corrected the dhikr button styling for better visibility
+  // NEW: A container for the small buttons to add shadow and border
   dhikrButton: {
     flex: 1,
-    backgroundColor: 'rgba(6, 182, 212, 0.2)',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    marginHorizontal: 5,
+  },
+  // NEW: The LinearGradient style itself
+  gradientButton: {
     paddingVertical: 12,
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(6, 182, 212, 0.5)',
-    marginHorizontal: 5, // Added margin to create spacing
+    borderColor: 'rgba(255, 255, 255, 0.2)', // A light border for pop
+  },
+  buttonContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+  },
+  buttonIcon: {
+      marginRight: 8,
   },
   dhikrButtonText: {
     color: 'white',
@@ -93,22 +140,25 @@ const dhikrCardStyles = StyleSheet.create({
   },
   fullWidthButtonContainer: {
     marginTop: 10,
-    // Using padding on the container to prevent the button from touching the card edges
     paddingHorizontal: 5,
   },
+  // NEW: A container for the full-width button to add shadow
   fullWidthButton: {
     width: '100%',
-    backgroundColor: 'rgba(78, 59, 137, 0.5)',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  // NEW: The LinearGradient style for the full-width button
+  gradientFullWidthButton: {
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
-    elevation: 3,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   fullWidthButtonText: {
     color: 'white',
@@ -285,7 +335,7 @@ const getPrayerIcon = (prayerName) => {
   if (showQuranReaderScreen) {
     // return <QuranReaderScreen onBack={() => setShowQuranReaderScreen(false)} />;
     return <QuranReaderScreen
-    onBack={() => setIsReading(false)}
+    onBack={() =>  setShowQuranReaderScreen(false)}
     onFinishReading={handleFinishReading} // <-- This is the key
 />
   }
@@ -355,8 +405,11 @@ const getPrayerIcon = (prayerName) => {
           </TouchableOpacity>
         </View>
         <View style={styles.headerBottomRow}>
-          <Text style={styles.dateText}>{currentDate}</Text>
-          <Text style={styles.dateDivider}>•</Text>
+          {/* NEW: Wrap the Gregorian date and the divider in a new View */}
+          <View style={styles.dateGroup}>
+            <Text style={styles.dateText}>{currentDate}</Text>
+            <Text style={styles.dateDivider}>•</Text>
+          </View>
           <Text style={styles.dateText}>{hijriDate}</Text>
         </View>
       </View>
@@ -405,6 +458,15 @@ const getPrayerIcon = (prayerName) => {
                     <Text style={styles.prayerIcon}>{getPrayerIcon(prayer.name)}</Text>
                     <Text style={styles.prayerNameText}>{prayer.name}</Text>
                     <Text style={styles.prayerTimeText}>{prayer.time}</Text>
+                    {/* NEW: Conditional checkbox icon at the bottom */}
+                    {completedPrayers[index] && (
+                        <Ionicons
+                            name="checkmark-circle"
+                            size={20}
+                            color="#22c55e"
+                            style={styles.prayerCheckboxIcon}
+                        />
+                    )}
                   </TouchableOpacity>
                 ))}
               </View>
@@ -557,6 +619,11 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 14,
   },
+  // NEW: Style to group the Gregorian date and the dot
+  dateGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   dateText: {
     color: '#94a3b8',
     fontSize: 14,
@@ -659,16 +726,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'column', // Changed to column for vertical layout
   },
   prayerButtonCompleted: {
     backgroundColor: 'rgba(6, 182, 212, 0.1)',
-    borderWidth: 1, // Added border width
-    borderColor: '#06b6d4', // Border color for completed prayers
+    borderWidth: 1,
+    borderColor: '#06b6d4',
   },
   prayerButtonPending: {
     backgroundColor: 'rgba(6, 182, 212, 0.05)',
-    borderWidth: 1, // Added border width
-    borderColor: 'rgba(6, 182, 212, 0.3)', // Subtle border for pending prayers
+    borderWidth: 1,
+    borderColor: 'rgba(6, 182, 212, 0.3)',
+  },
+  // NEW: Styling for the checkbox icon at the bottom
+  prayerCheckboxIcon: {
+      marginTop: 5, // Added some top margin to separate it from the text
   },
   prayerIcon: {
     fontSize: 24,

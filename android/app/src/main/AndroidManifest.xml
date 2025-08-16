@@ -28,9 +28,6 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="muslimjourney"/>
-        <data android:scheme="ehsaan"/>
-        <data android:scheme="Ihsan"/>
         <data android:scheme="Tazkia 360"/>
       </intent-filter>
     </activity>

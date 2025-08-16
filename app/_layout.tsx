@@ -7,7 +7,7 @@ import { StyleSheet } from 'react-native';
 import CommunityScreen from './(tabs)/community';
 import HabitsScreen from './(tabs)/habits';
 import HomeScreen from './(tabs)/home';
-import DeepWorkScreen from './(tabs)/meditation';
+import MeditationScreen from './(tabs)/meditation';
 import ProgressScreen from './(tabs)/progress';
 
 // const HabitsScreen = () => (
@@ -95,7 +95,7 @@ export default function TabsLayout() {
       />
       <Tab.Screen
         name="Focus"
-        component={DeepWorkScreen}
+        component={MeditationScreen}
         options={{
           tabBarLabel: 'Focus',
           tabBarIcon: ({ color }) => (

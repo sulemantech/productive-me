@@ -1,324 +1,542 @@
-import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, } from 'react-native';
 
-/**
- * A standalone component for reading the Quran, with functionality to track reading progress.
- * @param {Function} onBack - A function to navigate back from this screen.
- * @param {Function} onFinishReading - A callback to pass reading progress (surah name, ayah count) to a parent component.
- */
-const QuranReaderScreen = ({ 
-    onBack = () => console.log('Back button pressed'), 
-    onFinishReading = (surahName, ayahCount) => console.log(`Finished reading ${ayahCount} ayahs from ${surahName}`)
-}) => {
-    // State to store the list of surahs
-    const [surahs, setSurahs] = useState([]);
-    // State to store the currently selected surah
-    const [selectedSurah, setSelectedSurah] = useState(null);
-    // State to store the fetched text of the selected surah
-    const [surahText, setSurahText] = useState(null);
-    // State to manage loading indicators
-    const [loading, setLoading] = useState(true);
-    // State for error handling
-    const [error, setError] = useState(null);
-    // State to control the visibility of the surah selection modal
-    const [showSurahModal, setShowSurahModal] = useState(false);
-    // State to keep track of the ayahs that have been marked as read in the current session
-    const [readAyahs, setReadAyahs] = useState([]);
-    // State to count the number of ayahs read in the current session
-    const [sessionReadCount, setSessionReadCount] = useState(0);
+// Assuming you have your real dbController in the same directory
+import { dbController } from '../services/dbController';
 
-    // Effect to fetch the list of surahs from the API when the component mounts
-    useEffect(() => {
-        const fetchSurahs = async () => {
-            try {
-                const response = await fetch('https://api.alquran.cloud/v1/surah');
-                const data = await response.json();
-                if (data.code === 200 && data.data) {
-                    setSurahs(data.data);
-                    // Automatically select the first surah on initial load
-                    setSelectedSurah(data.data[0]);
-                } else {
-                    throw new Error('Could not fetch surah list.');
-                }
-            } catch (err) {
-                setError('Failed to load surahs.');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchSurahs();
-    }, []);
+const surahNames = [
+  'Al-Fatihah', 'Al-Baqarah', 'Al Imran', 'An-Nisa', 'Al-Maidah', 'Al-Anam',
+  'Al-Araf', 'Al-Anfal', 'At-Tawbah', 'Yunus', 'Hud', 'Yusuf', 'Ar-Rad',
+  'Ibrahim', 'Al-Hijr', 'An-Nahl', 'Al-Isra', 'Al-Kahf', 'Maryam', 'Taha',
+  'Al-Anbiya', 'Al-Hajj', 'Al-Muminun', 'An-Nur', 'Al-Furqan', 'As-Shuara',
+  'An-Naml', 'Al-Qasas', 'Al-Ankabut', 'Ar-Rum', 'Luqman', 'As-Sajdah',
+  'Al-Ahzab', 'Saba', 'Fatir', 'Ya-Sin', 'As-Saffat', 'Sad', 'Az-Zumar',
+  'Ghafir', 'Fussilat', 'As-Shura', 'Az-Zukhruf', 'Ad-Dukhan', 'Al-Jathiyah',
+  'Al-Ahqaf', 'Muhammad', 'Al-Fath', 'Al-Hujurat', 'Qaf', 'Adh-Dhariyat',
+  'At-Tur', 'An-Najm', 'Al-Qamar', 'Ar-Rahman', 'Al-Waqiah', 'Al-Hadid',
+  'Al-Mujadilah', 'Al-Hashr', 'Al-Mumtahanah', 'As-Saff', 'Al-Jumuah',
+  'Al-Munafiqun', 'At-Taghabun', 'At-Talaq', 'At-Tahrim', 'Al-Mulk',
+  'Al-Qalam', 'Al-Haqqah', 'Al-Maarij', 'Nuh', 'Al-Jinn', 'Al-Muzzammil',
+  'Al-Muddaththir', 'Al-Qiyamah', 'Al-Insan', 'Al-Mursalat', 'An-Naba',
+  'An-Naziat', 'Abasa', 'At-Takwir', 'Al-Infitar', 'Al-Mutaffifin',
+  'Al-Inshiqaq', 'Al-Buruj', 'At-Tariq', 'Al-Ala', 'Al-Ghashiyah', 'Al-Fajr',
+  'Al-Balad', 'As-Shams', 'Al-Layl', 'Ad-Duha', 'Ash-Sharh', 'At-Tin',
+  'Al-Alaq', 'Al-Qadr', 'Al-Bayyinah', 'Az-Zalzalah', 'Al-Adiyat',
+  'Al-Qariah', 'At-Takathur', 'Al-Asr', 'Al-Humazah', 'Al-Fil', 'Quraish',
+  'Al-Maun', 'Al-Kawthar', 'Al-Kafirun', 'An-Nasr', 'Al-Masad', 'Al-Ikhlas',
+  'Al-Falaq', 'An-Nas'
+];
 
-    // Effect to fetch the text of the selected surah whenever it changes
-    useEffect(() => {
-        if (selectedSurah) {
-            const fetchSurahText = async () => {
-                setLoading(true);
-                setError(null);
-                try {
-                    const response = await fetch(`https://api.alquran.cloud/v1/surah/${selectedSurah.number}/editions/quran-uthmani`);
-                    const data = await response.json();
-                    if (data.code === 200 && data.data && data.data.length > 0) {
-                        setSurahText(data.data[0]);
-                        // Reset the reading session when a new surah is selected
-                        setReadAyahs([]);
-                        setSessionReadCount(0);
-                    } else {
-                        throw new Error('Could not fetch surah text.');
-                    }
-                } catch (err) {
-                    setError('Failed to load surah text.');
-                    console.error("Error fetching surah:", err);
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchSurahText();
-        }
-    }, [selectedSurah]);
+const surahTotalVerses = {
+  1: 7, 2: 286, 3: 200, 4: 176, 5: 120, 6: 165, 7: 206, 8: 75, 9: 129, 10: 109,
+  11: 123, 12: 111, 13: 43, 14: 52, 15: 99, 16: 128, 17: 111, 18: 110, 19: 98,
+  20: 135, 21: 112, 22: 78, 23: 118, 24: 64, 25: 77, 26: 227, 27: 93, 28: 88,
+  29: 69, 30: 60, 31: 34, 32: 30, 33: 73, 34: 54, 35: 45, 36: 83, 37: 182,
+  38: 88, 39: 75, 40: 85, 41: 54, 42: 53, 43: 89, 44: 59, 45: 37, 46: 35,
+  47: 38, 48: 29, 49: 18, 50: 45, 51: 60, 52: 49, 53: 62, 54: 55, 55: 78,
+  56: 96, 57: 29, 58: 22, 59: 24, 60: 13, 61: 14, 62: 11, 63: 11, 64: 18,
+  65: 12, 66: 12, 67: 30, 68: 52, 69: 52, 70: 44, 71: 28, 72: 28, 73: 20,
+  74: 56, 75: 40, 76: 31, 77: 50, 78: 40, 79: 46, 80: 42, 81: 29, 82: 19,
+  83: 36, 84: 25, 85: 22, 86: 17, 87: 19, 88: 26, 89: 30, 90: 20, 91: 15,
+  92: 21, 93: 11, 94: 8, 95: 8, 96: 19, 97: 5, 98: 8, 99: 8, 100: 11,
+  101: 11, 102: 8, 103: 3, 104: 9, 105: 5, 106: 4, 107: 7, 108: 3, 109: 6,
+  110: 3, 111: 5, 112: 4, 113: 5, 114: 6
+};
 
-    // Handler for selecting a new surah from the modal
-    const handleSurahSelect = (surah) => {
-        setSelectedSurah(surah);
-        setShowSurahModal(false);
+const QuranReaderScreen = ({ onBack = () => {} }) => {
+    const [timer, setTimer] = useState(0);
+     const [juzNumber, setJuzNumber] = useState(1); // Set an initial value
+     const [ayahsRead, setAyahsRead] = useState(0); // New state to track total verses read
+  const intervalRef = useRef();
+  const [isDbInitialized, setIsDbInitialized] = useState(false);
+  const [currentSurah, setCurrentSurah] = useState(4);
+  const [currentAyah, setCurrentAyah] = useState(35);
+  const [ayahData, setAyahData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [totalAyahsInCurrentSurah, setTotalAyahsInCurrentSurah] = useState(0);
+
+   useEffect(() => {
+    // Start the timer when the component mounts
+    intervalRef.current = setInterval(() => {
+      setTimer(prevTimer => prevTimer + 1);
+    }, 1000);
+
+    // Clean up the interval when the component unmounts
+    return () => {
+      clearInterval(intervalRef.current);
     };
-
-    // Handler for marking an ayah as read. Prevents double counting.
-    const handleReadAyah = (ayahNumber) => {
-        if (!readAyahs.includes(ayahNumber)) {
-            setReadAyahs([...readAyahs, ayahNumber]);
-            setSessionReadCount(sessionReadCount + 1);
-        }
+  }, []); // The empty dependency array ensures this effect runs only once
+  
+  useEffect(() => {
+    const initializeDbAndFetchAyah = async () => {
+      try {
+        await dbController.init();
+        setIsDbInitialized(true);
+        //setLoading(true);
+        const initialData = await dbController.getAyahWithTranslation(currentSurah, currentAyah);
+        const total = await dbController.getTotalAyahsInSurah(currentSurah);
+        setAyahData(initialData);
+        setTotalAyahsInCurrentSurah(total);
+        const juz = await dbController.getJuzForAyah(currentSurah, currentAyah);
+         setAyahsRead(1); // Initialize the count for the first ayah
+        setJuzNumber(juz); // Update the state
+      } catch (e) {
+        console.error("Failed to initialize DB or fetch initial data:", e);
+      } finally {
+        //setLoading(false);
+      }
     };
+    initializeDbAndFetchAyah();
+  }, []);
 
-    // Handler for the back button, which also sends reading progress to a parent component
-    // const handleBackWithProgress = () => {
-    //     if (selectedSurah) {
-    //         onFinishReading(selectedSurah.englishName, sessionReadCount);
-    //     }
-    //     onBack();
-    // };
-    // Inside QuranReaderScreen.js
-const handleBackWithProgress = () => {
-    if (selectedSurah) {
-        // This line sends the surah name and session count back to the HomeScreen
-        onFinishReading(selectedSurah.englishName, sessionReadCount);
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!isDbInitialized) return;
+      //setLoading(true);
+      try {
+        const data = await dbController.getAyahWithTranslation(currentSurah, currentAyah);
+        const total = await dbController.getTotalAyahsInSurah(currentSurah);
+        setAyahData(data);
+        setTotalAyahsInCurrentSurah(total);
+        const juz = await dbController.getJuzForAyah(currentSurah, currentAyah);
+        setJuzNumber(juz); // Update the state
+      } catch (e) {
+        console.error("Failed to fetch data:", e);
+        setAyahData(null);
+        setTotalAyahsInCurrentSurah(0);
+      } finally {
+        //setLoading(false);
+      }
+    };
+    fetchData();
+  }, [currentSurah, currentAyah, isDbInitialized]);
+
+  // A helper function to format the time as MM:SS
+  const formatTime = (timeInSeconds) => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = timeInSeconds % 60;
+    return `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+  const handleNextAyah = async () => {
+    //setLoading(true);
+    const nextAyah = await dbController.getNextAyah(currentSurah, currentAyah);
+    if (nextAyah) {
+      setCurrentSurah(nextAyah.surah_number);
+      setCurrentAyah(nextAyah.verse_number);
+      setAyahsRead(prevAyahs => prevAyahs + 1); // Increment the count
+    } else {
+    //  setLoading(false);
     }
-    onBack();
+  };
+
+  const handlePreviousAyah = async () => {
+    //setLoading(true);
+    const previousAyah = await dbController.getPreviousAyah(currentSurah, currentAyah);
+    if (previousAyah) {
+      setCurrentSurah(previousAyah.surah_number);
+      setCurrentAyah(previousAyah.verse_number);
+      setAyahsRead(prevAyahs => Math.max(0, prevAyahs - 1)); // Decrement the count, but not below 0
+    } else {
+    //  setLoading(false);
+    }
+  };
+  const onGoToSettings = () => {
+ 
 };
 
-    return (
-        <View style={quranReaderStyles.container}>
-            <View style={quranReaderStyles.header}>
-                <TouchableOpacity onPress={handleBackWithProgress} style={quranReaderStyles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#06b6d4" />
-                </TouchableOpacity>
-                <Text style={quranReaderStyles.headerTitle}>Quran Reader</Text>
+  const progressPercentage = totalAyahsInCurrentSurah > 0
+    ? (currentAyah / totalAyahsInCurrentSurah) * 100
+    : 0;
+
+  const remainingAyahs = totalAyahsInCurrentSurah - currentAyah;
+
+  return (
+    <View style={styles.container}>
+      <SafeAreaView style={{ flex: 1 }}>
+        <StatusBar barStyle="light-content" backgroundColor={styles.container.backgroundColor} />
+
+        {/* Header Section */}
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.navArrowButton} onPress={onBack}>
+            <Text style={{color: '#fff', fontSize: 24}}>←</Text>
+          </TouchableOpacity>
+          <View style={styles.headerIcons}>
+            <View style={styles.headerIconContainer}>
+              <Text style={{ color: '#e91e63', fontSize: 16 }}>♥</Text>
+              <Text style={styles.headerIconText}>2.8K</Text>
             </View>
-
-            {/* Button to open the surah selection modal */}
-            <TouchableOpacity
-                onPress={() => setShowSurahModal(true)}
-                style={quranReaderStyles.surahSelectorContainer}
-            >
-                <Text style={quranReaderStyles.surahSelectorText}>
-                    {selectedSurah ? selectedSurah.englishName : 'Select Surah'}
-                </Text>
-                <Ionicons name="chevron-down" size={20} color="#cbd5e1" />
-            </TouchableOpacity>
-
-            <ScrollView style={quranReaderStyles.surahContent}>
-                {loading ? (
-                    <ActivityIndicator size="large" color="#06b6d4" style={{ marginTop: 20 }} />
-                ) : error ? (
-                    <Text style={quranReaderStyles.errorText}>{error}</Text>
-                ) : surahText && surahText.ayahs ? (
-                    <View>
-                        <Text style={quranReaderStyles.surahTitle}>{surahText.englishName}</Text>
-                        {surahText.ayahs.map((ayah, index) => (
-                            <TouchableOpacity
-                                key={ayah.numberInSurah}
-                                style={[quranReaderStyles.ayahContainer, readAyahs.includes(ayah.numberInSurah) ? quranReaderStyles.ayahRead : null]}
-                                onPress={() => handleReadAyah(ayah.numberInSurah)}
-                            >
-                                <Text style={quranReaderStyles.ayahArabicText}>{ayah.text}</Text>
-                                <Text style={quranReaderStyles.ayahNumber}>{ayah.numberInSurah}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                ) : (
-                    <Text style={quranReaderStyles.errorText}>No surah data available. Please select a surah to view.</Text>
-                )}
-            </ScrollView>
-
-            {/* Modal for surah selection */}
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={showSurahModal}
-                onRequestClose={() => setShowSurahModal(false)}
-            >
-                <View style={quranReaderStyles.modalOverlay}>
-                    <View style={quranReaderStyles.modalContent}>
-                        <Text style={quranReaderStyles.modalTitle}>Select a Surah</Text>
-                        <ScrollView style={{ width: '100%' }}>
-                            {surahs.map((surah, index) => (
-                                <TouchableOpacity
-                                    key={index}
-                                    onPress={() => handleSurahSelect(surah)}
-                                    style={quranReaderStyles.surahItem}
-                                >
-                                    <Text style={quranReaderStyles.surahItemText}>{surah.englishName}</Text>
-                                    <Text style={quranReaderStyles.surahItemArabicName}>{surah.name}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                        <TouchableOpacity
-                            onPress={() => setShowSurahModal(false)}
-                            style={quranReaderStyles.modalCloseButton}
-                        >
-                            <Text style={quranReaderStyles.modalCloseButtonText}>Close</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+            
+            <View style={styles.headerIconContainer}>
+              <Text style={{ color: '#fff', fontSize: 16 }}>♦</Text>
+              <Text style={styles.headerIconText}>2</Text>
+            </View>
+            {/* <View style={styles.headerIconContainer}>
+              <Text style={{ color: '#fff', fontSize: 16 }}>⏱</Text>
+              <Text style={styles.headerIconText}>00:03</Text>
+            </View> */}
+            <View style={styles.headerIconContainer}>
+  <Text style={{ color: '#fff', fontSize: 16 }}>⏱</Text>
+  <Text style={styles.headerIconText}>{formatTime(timer)}</Text>
+</View>
+          </View>
+          {/* <TouchableOpacity>
+            <Text style={{ color: '#fff', fontSize: 24 }}>⚙</Text>
+          </TouchableOpacity> */}
+          <TouchableOpacity onPress={onGoToSettings} style={styles.settingsButton}>
+        <Text style={{ color: '#fff', fontSize: 24 }}>⚙</Text>
+      </TouchableOpacity>
         </View>
-    );
+
+        {/* Progress Section */}
+        {/* <View style={styles.progressContainer}>
+          <View style={styles.progressHeader}>
+            <View style={styles.levelBadge}>
+              <Text style={styles.levelText}>Lvl 01</Text>
+            </View>
+            <Text style={styles.progressTitle}>Break the egg</Text>
+            <Text style={styles.progressTotal}>Total: 0 min</Text>
+          </View>
+          <View style={styles.countdownContainer}>
+            <Text style={styles.countdownDigit}>0</Text>
+            <Text style={styles.countdownDigit}>1</Text>
+            <Text style={styles.countdownDigit}>5</Text>
+            <Text style={styles.countdownDigit}>7</Text>
+          </View>
+        </View> */}
+
+        {/* Verse Navigation Section */}
+        {/* Verse Navigation Section */}
+        <View style={styles.verseNavContainer}>
+          <View style={styles.verseNavInfo}>
+            <Text style={styles.verseNavText}>{currentAyah}/{totalAyahsInCurrentSurah}</Text>
+            <Text style={styles.verseNavText}>Juz {juzNumber}: {remainingAyahs} Verses Left</Text>
+            <Text style={styles.verseNavText}>{Math.round(progressPercentage)}%</Text>
+          </View>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressBarFill, { width: `${progressPercentage}%` }]}></View>
+          </View>
+        </View>
+
+        {/* Main scrollable content area */}
+        <ScrollView style={styles.mainContentScrollView}>
+          {loading ? (
+            <ActivityIndicator size="large" color="#fff" style={{ marginTop: 50 }} />
+          ) : (
+            <>
+              {/* Main Verse Card for Arabic text */}
+              <View style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <TouchableOpacity><Text style={{ color: '#4a148c', fontSize: 20 }}>🔍</Text></TouchableOpacity>
+                  <TouchableOpacity><Text style={{ color: '#4a148c', fontSize: 20 }}>🔊</Text></TouchableOpacity>
+                  <View style={styles.verseInfo}>
+                    <Text style={styles.verseTitle}>{surahNames[currentSurah-1]}</Text>
+                    <Text style={styles.verseSubtitle}>{currentAyah}/{totalAyahsInCurrentSurah}</Text>
+                  </View>
+                  <View style={styles.cardHeaderRight}>
+                    <View style={styles.cardHeaderIconContainer}>
+                      <Text style={{ color: '#e91e63', fontSize: 16 }}>♥</Text>
+                      <Text style={styles.cardHeaderIconText}>573</Text>
+                    </View>
+                    <TouchableOpacity><Text style={{ color: '#4a148c', fontSize: 20 }}>🔖</Text></TouchableOpacity>
+                  </View>
+                </View>
+                <View style={styles.arabicContent}>
+                  <Text style={styles.arabicText}>
+                    {ayahData?.text || 'لا يوجد نص عربي متاح.'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* English Translation Section (outside the card) */}
+              <View style={styles.translationContainer}>
+  <View style={styles.translationHeader}>
+    <Text style={styles.translationTitle}>Translation:</Text>
+    <Text style={styles.translationVerseNumber}>{currentAyah}/{totalAyahsInCurrentSurah}</Text>
+  </View>
+  <Text style={styles.englishText}>
+    {ayahData?.english_text || 'No English text available.'}
+  </Text>
+</View>
+            </>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity
+          style={styles.bottomNavButton}
+          onPress={handlePreviousAyah}
+          disabled={loading || (currentSurah === 1 && currentAyah === 1)}
+        >
+          <Text style={{ color: '#fff', fontSize: 24 }}>←</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.doneButton}>
+          <Text style={styles.doneButtonText}>Completed</Text>
+        </TouchableOpacity>
+        <View style={styles.bottomNavRight}>
+           <View style={styles.ayahsReadContainer}>
+            <Text style={styles.plusText}>+{ayahsRead}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.bottomNavButton}
+            onPress={handleNextAyah}
+            disabled={loading || (currentSurah === 114 && currentAyah === surahTotalVerses[114])}
+          >
+            <Text style={{ color: '#fff', fontSize: 24 }}>→</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
 };
 
-const quranReaderStyles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#0f172a',
-        padding: 16,
-        justifyContent: 'flex-start',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 16,
-        position: 'relative',
-        width: '100%',
-    },
-    backButton: {
-        position: 'absolute',
-        left: 0,
-        padding: 8,
-    },
-    headerTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: 'white',
-    },
-    surahSelectorContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        width: '100%',
-        backgroundColor: '#334155',
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 16,
-    },
-    surahSelectorText: {
-        color: 'white',
-        fontSize: 16,
-    },
-    surahContent: {
-        flex: 1,
-        backgroundColor: '#1e293b',
-        borderRadius: 8,
-        padding: 16,
-    },
-    surahTitle: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#cbd5e1',
-        textAlign: 'center',
-        marginBottom: 20,
-        paddingBottom: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#475569',
-    },
-    ayahContainer: {
-        flexDirection: 'row-reverse',
-        alignItems: 'flex-start',
-        marginBottom: 16,
-    },
-    ayahArabicText: {
-        flex: 1,
-        fontSize: 22,
-        color: '#f8fafc',
-        textAlign: 'right',
-        lineHeight: 36,
-    },
-    ayahNumber: {
-        fontSize: 16,
-        color: '#06b6d4',
-        marginLeft: 8,
-        fontWeight: 'bold',
-    },
-    ayahRead: {
-        backgroundColor: 'rgba(6, 182, 212, 0.2)',
-        borderRadius: 8,
-        padding: 8,
-    },
-    errorText: {
-        color: 'red',
-        textAlign: 'center',
-        marginTop: 20,
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    modalContent: {
-        backgroundColor: '#1E293B',
-        padding: 24,
-        borderRadius: 16,
-        width: '90%',
-        maxHeight: '70%',
-        alignItems: 'center',
-    },
-    modalTitle: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#F8FAFC',
-        marginBottom: 16,
-    },
-    surahItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 12,
-        paddingHorizontal: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#475569',
-        width: '100%',
-    },
-    surahItemText: {
-        color: '#F8FAFC',
-        fontSize: 16,
-    },
-    surahItemArabicName: {
-        color: '#CBD5E1',
-        fontSize: 16,
-    },
-    modalCloseButton: {
-        marginTop: 24,
-        backgroundColor: '#06B6D4',
-        paddingVertical: 12,
-        paddingHorizontal: 32,
-        borderRadius: 9999,
-    },
-    modalCloseButtonText: {
-        color: '#F8FAFC',
-        fontWeight: '600',
-    },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#322345', // Replaced with a color that more closely matches the home screen's background
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    marginTop: 20,
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+  },
+  headerIconContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  headerIconText: {
+    color: '#fff',
+    marginLeft: 5,
+    fontSize: 12,
+  },
+  progressContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '85%',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  levelBadge: {
+    backgroundColor: '#382b4a', // Matched with the dark grey-purple color from other cards
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  levelText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  progressTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  progressTotal: {
+    color: '#fff',
+    fontSize: 12,
+  },
+  countdownContainer: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  countdownDigit: {
+    backgroundColor: '#382b4a', // Matched with the dark grey-purple color from other cards
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+   settingsButton: {
+    position: 'absolute',
+    right: 16,
+    padding: 8,
+  },
+  verseNavContainer: {
+    marginTop: 20,
+    paddingHorizontal: 30,
+    gap: 5,
+  },
+  verseNavInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 20,
+  },
+  verseNavText: {
+    color: '#fff',
+    alignSelf: 'flex-start',
+    fontSize: 12,
+  },
+  progressBar: {
+    height: 5,
+    backgroundColor: '#382b4a', // Matched with the dark grey-purple color from other cards
+    borderRadius: 5,
+    width: '100%',
+    marginTop: 5,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 5,
+  },
+  mainContentScrollView: {
+    flex: 1,
+  },
+  card: {
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  verseInfo: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  verseTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#322345',
+  },
+  verseSubtitle: {
+    fontSize: 12,
+    color: '#9e9e9e',
+  },
+  cardHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  cardHeaderIconContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  cardHeaderIconText: {
+    fontSize: 14,
+    color: '#322345',
+  },
+  arabicContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+  },
+  arabicText: {
+    fontSize: 24,
+    textAlign: 'right', // Added for right-to-left text flow
+    lineHeight: 40,
+    // fontFamily: 'Amiri', // This font needs to be loaded for proper Arabic script rendering
+    color: '#424242',
+  },
+  translationContainer: {
+  marginHorizontal: 20,
+  marginTop: 10,
+  padding: 20,
+  backgroundColor: '#382b4a', // Using the dark grey-purple from the home screen cards
+  borderRadius: 15,
+},
+translationHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 10,
+},
+translationTitle: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  color: '#fff',
+},
+translationVerseNumber: {
+  fontSize: 16,
+  color: '#9e9e9e',
+},
+englishText: {
+  fontSize: 16,
+  lineHeight: 24,
+  color: '#fff',
+},
+  bottomNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    marginTop: 'auto',
+  },
+  navArrowButton: {
+    backgroundColor: '#382b4a', // Matched with the dark grey-purple color from other cards
+    padding: 15,
+    borderRadius: 50,
+  },
+  bottomNavButton: {
+    backgroundColor: '#382b4a', // Matched with the dark grey-purple color from other cards
+    padding: 15,
+    borderRadius: 50,
+  },
+  doneButton: {
+    backgroundColor: '#fff',
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 50,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  doneButtonText: {
+    color: '#322345',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  bottomNavRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+   ayahsReadContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  plusText: {
+    color: '#fff',
+    fontSize: 14,
+    marginRight: 10,
+  },
 });
 
 export default QuranReaderScreen;
